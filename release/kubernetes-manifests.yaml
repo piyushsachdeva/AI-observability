@@ -414,6 +414,8 @@ metadata:
   labels:
     app: cartservice
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: cartservice
@@ -632,6 +634,8 @@ metadata:
   labels:
     app: paymentservice
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: paymentservice
@@ -705,6 +709,8 @@ metadata:
   labels:
     app: frontend
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: frontend
@@ -833,6 +839,8 @@ metadata:
   labels:
     app: recommendationservice
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: recommendationservice
