@@ -15,7 +15,20 @@ jobs:
       - name: Detect changed service
         id: changed
         run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -o 'src/[^/]*' | head -1 | cut -d'/' -f2)
+          # Parse which Deployment name changed in the manifest
+          # Strategy: look for "name: <service>" lines near changed hunks
+          CHANGED=$(git diff HEAD~1 HEAD -- release/kubernetes-manifests.yaml \
+            | grep '^+' \
+            | grep -oP 'name:\s+\K[a-z][a-z0-9-]+service' \
+            | head -1)
+
+          # Fallback: check if any known service appears in the diff at all
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(git diff HEAD~1 HEAD -- release/kubernetes-manifests.yaml \
+              | grep -oE 'paymentservice|cartservice|frontend|recommendationservice|adservice|checkoutservice|productcatalogservice|currencyservice|shippingservice|emailservice|redis-cart|loadgenerator' \
+              | head -1)
+          fi
+
           echo "service=${CHANGED:-unknown}" >> $GITHUB_OUTPUT
 
       - name: Push deploy event to Elasticsearch
