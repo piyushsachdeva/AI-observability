@@ -433,6 +433,14 @@ kubectl get svc frontend-external -n online-boutique
 
 ### 3e. Set up GitHub Webhook (instant deploys)
 
+> **Alternative — reduce poll interval instead of webhook:**
+> If you can't expose ArgoCD publicly (no LoadBalancer IP), you can shorten the poll interval:
+> ```bash
+> kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data": {"timeout.reconciliation": "30s"}}'
+> kubectl rollout restart deployment/argocd-repo-server -n argocd
+> ```
+> This polls GitHub every 30s instead of 3 minutes. Slower than a webhook (~30s delay vs ~2s) but works without a public IP. Not recommended for the demo — the pod death should be near-instant for impact.
+
 By default ArgoCD polls GitHub every 3 minutes. The webhook makes it react in seconds.
 
 ```bash
