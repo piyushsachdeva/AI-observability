@@ -136,10 +136,12 @@ cd microservices-demo
 ## Step 3 — Elastic Cloud
 
 ### 3a. Create deployment
+![alt text](image.png)
 
 1. `cloud.elastic.co` → **Create deployment**
 2. Provider: **Google Cloud** | Region: **us-central1** | Name: `blame-the-deploy`
 3. Click **Create** → **save the `elastic` password immediately** (shown once only)
+
 
 ### 3b. Get your endpoints
 
@@ -148,15 +150,11 @@ From `cloud.elastic.co` → click your deployment:
 | What | Where to find it | Used for |
 |------|-----------------|----------|
 | Elasticsearch endpoint | Under **Elasticsearch** → **Copy endpoint** | GitHub secret `ES_ENDPOINT`, curl commands |
-| OTLP ingest endpoint | Under **Integrations** → **Manage** → **APM** → copy the OTLP endpoint | OTel kube-stack secret `elastic_otlp_endpoint` |
+| OTLP ingest endpoint | Under **Integrations** → **Manage** → **APM** → copy the OTLP endpoint | OTel kube-stack secret `elastic_otlp_endpoint` | (i am not suer if we need this or not check once that it is working without it or not if not then set this up as well. )
 
 ### 3c. Create API key — open Kibana once
 
-Kibana → ☰ → **Stack Management** → **Security** → **API Keys** → **Create API key**
-- Name: `blame-the-deploy`
-- Privileges: leave blank
-- Click **Create** → **copy immediately** (shown once only)
-
+Get the api keys from main elastic cloud deployment we need to use it for authentication in curl commands in github actions and OTel kube-stack. 
 Verify:
 ```bash
 curl -s -w "\nHTTP:%{http_code}" \
@@ -168,7 +166,11 @@ curl -s -w "\nHTTP:%{http_code}" \
 ---
 
 ## Step 4 — OpenTelemetry Kube-Stack
+![alt text](image-1.png)
 
+![alt text](image-2.png)
+![alt text](image-3.png)
+below are same instructions as above but with some changes in the values.yaml file which is used to install the kube-stack.
 Ships all pod logs + metrics from GKE to Elastic Cloud automatically. Install once, never touch again.
 
 ```bash
