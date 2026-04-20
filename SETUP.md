@@ -17,7 +17,7 @@ GitHub (itsBaivab/microservices-demo)
         │         └──► Elasticsearch: github-deployments index
         │                  stores: commit SHA, author, service, what changed
         │
-        └──► Webhook ──► ArgoCD (GitOps controller)
+        └──► ArgoCD (GitOps controller, polls every 30s)
                               │
                               └──► GKE Cluster (elastic-cloud-test)
                                         │
@@ -54,7 +54,7 @@ GitHub (itsBaivab/microservices-demo)
 | **GKE Cluster** | Runs 12 microservices (Online Boutique) + all tooling |
 | **Online Boutique** | Google's demo e-commerce app — the thing we break |
 | **ArgoCD** | GitOps controller — watches the GitHub repo, deploys every push automatically |
-| **GitHub Webhook** | Tells ArgoCD about new commits instantly (no 3-min poll wait) |
+| **ArgoCD poll (30s)** | Checks GitHub every 30s and deploys any new commit automatically |
 | **GitHub Actions** | On every push, indexes commit metadata to Elasticsearch |
 | **`github-deployments` index** | Custom ES index — who deployed what, when, to which service |
 | **OTel kube-stack** | DaemonSet on every node — ships all pod logs + metrics to Elastic Cloud |
@@ -101,8 +101,8 @@ push bad commit
     ▼  (~5 seconds)
 GitHub Actions: indexes commit to github-deployments
     │
-    ▼  (~5 seconds)
-ArgoCD: "OutOfSync" → syncing → "Synced" (green) ← ArgoCD did its job correctly
+    ▼  (~30 seconds)
+ArgoCD: polls GitHub → detects diff → "OutOfSync" → syncing → "Synced" (green)
     │
     ▼  (meanwhile in the cluster)
 paymentservice: Running → OOMKilled → CrashLoopBackOff
@@ -431,53 +431,25 @@ kubectl get svc frontend-external -n online-boutique
 # Open the EXTERNAL-IP in your browser — you should see the shop
 ```
 
-### 3e. Set up GitHub Webhook (instant deploys)
+### 3e. Reduce poll interval (faster syncs)
 
-> **Alternative — reduce poll interval instead of webhook:**
-> If you can't expose ArgoCD publicly (no LoadBalancer IP), you can shorten the poll interval:
-> ```bash
-> kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data": {"timeout.reconciliation": "30s"}}'
-> kubectl rollout restart deployment/argocd-repo-server -n argocd
-> ```
-> This polls GitHub every 30s instead of 3 minutes. Slower than a webhook (~30s delay vs ~2s) but works without a public IP. Not recommended for the demo — the pod death should be near-instant for impact.
-
-By default ArgoCD polls GitHub every 3 minutes. The webhook makes it react in seconds.
+By default ArgoCD polls GitHub every 3 minutes. Reduce it to 30 seconds so the demo feels responsive — push bad code, pod dies within ~30 seconds:
 
 ```bash
-# Generate a random secret
-WEBHOOK_SECRET=$(openssl rand -hex 32)
-echo "Your webhook secret: $WEBHOOK_SECRET"
-# Save this somewhere — you'll need it if you recreate the webhook
+kubectl patch configmap argocd-cm -n argocd --type merge \
+  -p '{"data": {"timeout.reconciliation": "30s"}}'
 
-# Store the secret in ArgoCD
-kubectl patch secret argocd-secret -n argocd --type merge -p \
-  "{\"stringData\": {\"webhook.github.secret\": \"$WEBHOOK_SECRET\"}}"
-
-# Register the webhook on GitHub
-gh api repos/itsBaivab/microservices-demo/hooks \
-  --method POST \
-  --field name=web \
-  --field active=true \
-  --field "events[]=push" \
-  --field "config[url]=https://<ARGOCD-EXTERNAL-IP>/api/webhook" \
-  --field "config[content_type]=json" \
-  --field "config[secret]=$WEBHOOK_SECRET" \
-  --field "config[insecure_ssl]=1"
-# Expect output with "active": true and a webhook ID
+kubectl rollout restart deployment/argocd-repo-server -n argocd
 ```
 
-Verify it works:
+Verify it applied:
 ```bash
-# Push an empty commit to trigger the webhook
-cd microservices-demo
-git commit --allow-empty -m "test: verify ArgoCD webhook"
-git push origin main
-
-# Watch ArgoCD logs for the webhook event
-kubectl logs -n argocd deployment/argocd-server --since=30s | grep -i webhook
-# Expect: "Received push event repo: https://github.com/itsBaivab/microservices-demo"
-# Expect: "refreshing app 'online-boutique' from webhook"
+kubectl get configmap argocd-cm -n argocd -o jsonpath='{.data.timeout\.reconciliation}'
+# Expect: 30s
 ```
+
+> **Why not use a GitHub webhook instead?**
+> A webhook reacts in ~2s vs ~30s for polling. But it requires GitHub to reach your ArgoCD LoadBalancer IP over HTTPS, which means managing a public IP and SSL. For a demo on GKE, 30s polling is simpler and reliable enough.
 
 ### 3f. Navigate ArgoCD UI
 
