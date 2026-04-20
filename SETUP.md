@@ -451,7 +451,7 @@ gh api repos/itsBaivab/microservices-demo/hooks \
   --field name=web \
   --field active=true \
   --field "events[]=push" \
-  --field "config[url]=https://34.133.31.193/api/webhook" \
+  --field "config[url]=https://<ARGOCD-EXTERNAL-IP>/api/webhook" \
   --field "config[content_type]=json" \
   --field "config[secret]=$WEBHOOK_SECRET" \
   --field "config[insecure_ssl]=1"
