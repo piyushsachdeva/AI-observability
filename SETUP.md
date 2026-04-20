@@ -323,61 +323,16 @@ These four services have `strategy: type: Recreate` — when you push a change, 
 | frontend | 64Mi | 32Mi |
 | recommendationservice | 220Mi | 48Mi |
 
-### 2c. How to create the problem (break paymentservice)
+### 2c. What the manifest already has (read-only, no changes needed now)
 
-Open `release/kubernetes-manifests.yaml` in a text editor. Search for `name: paymentservice` under `kind: Deployment` (around line 631). Find the `resources` section:
+The manifest at `release/kubernetes-manifests.yaml` already has all the right configuration:
+- `strategy: type: Recreate` on paymentservice, cartservice, frontend, recommendationservice
+- CPU requests tuned to fit on e2-standard-4 nodes
+- `istio-manifests.yaml` removed
 
-```yaml
-        resources:
-          requests:
-            cpu: 100m
-            memory: 64Mi    ← change this to 24Mi
-          limits:
-            cpu: 200m
-            memory: 128Mi   ← change this to 24Mi
-```
+You don't need to change anything here yet. Clone it, understand the structure, move on to sections 3–6 to set up the full stack. Come back to section 8 (Full Demo Loop) when everything is running.
 
-Change **both** `memory` values to `24Mi` (requests must be ≤ limits — Kubernetes rejects it otherwise):
-
-```yaml
-        resources:
-          requests:
-            cpu: 100m
-            memory: 24Mi
-          limits:
-            cpu: 200m
-            memory: 24Mi
-```
-
-Then push:
-```bash
-git add release/kubernetes-manifests.yaml
-git commit -m "perf: tune paymentservice memory limits for cost optimisation"
-git push origin main
-```
-
-What happens automatically within ~10 seconds:
-1. **GitHub Actions** → indexes the commit to `github-deployments` in Elasticsearch
-2. **GitHub Webhook** → notifies ArgoCD of the new commit instantly
-3. **ArgoCD** → pulls the change, applies the updated manifest to the cluster
-4. **Recreate strategy** → Kubernetes kills the old paymentservice pod, starts new one with 24Mi
-5. **OOMKill** → new pod hits the 24Mi limit under loadgenerator traffic and crashes
-6. **OTel DaemonSet** → ships the crash event to `logs-*` in Elastic Cloud
-
-Watch live:
-```bash
-kubectl get pods -n online-boutique -w
-# You'll see paymentservice go: ContainerCreating → Running → OOMKilled → CrashLoopBackOff
-# Press Ctrl+C to stop watching
-```
-
-### 2d. How to fix it
-
-```bash
-git revert HEAD --no-edit
-git push origin main
-# ArgoCD picks it up → restores 128Mi → pod recovers in ~30 seconds
-```
+> **How to break and fix services is covered in Section 8** — after ArgoCD, OTel, and the Agent are all set up. Doing it before that means nothing will be watching, nothing will be logging, and the agent won't have any data to answer from.
 
 ---
 
