@@ -286,6 +286,25 @@ release/
   index-deploy.yml            ← runs on every push — indexes commit to Elasticsearch
 ```
 
+### ⚠️ Important — commit changes BEFORE creating ArgoCD
+
+The manifest in this repo already has all the required modifications:
+- `strategy: type: Recreate` on the four breakable services
+- Reduced CPU requests so pods fit on e2-standard-4 nodes
+- `istio-manifests.yaml` removed (we don't run Istio)
+
+**ArgoCD's first sync deploys exactly what is in the repo at that moment.** If you fork this repo and make changes locally without pushing first, ArgoCD will deploy the wrong version and you'll immediately have an OutOfSync conflict that's painful to resolve.
+
+**Always follow this order:**
+```
+1. Make any changes to release/kubernetes-manifests.yaml
+2. git add + git commit + git push  ← repo must reflect your desired state
+3. THEN create the ArgoCD Application
+4. ArgoCD first sync → deploys your version correctly
+```
+
+If you skip step 2, ArgoCD deploys the old version → cluster doesn't match repo → OutOfSync from day one.
+
 ### 2a. Clone the repo
 
 ```bash
@@ -477,7 +496,7 @@ gh api repos/itsBaivab/microservices-demo/hooks \
   --field name=web \
   --field active=true \
   --field "events[]=push" \
-  --field "config[url]=https://136.116.115.80/api/webhook" \
+  --field "config[url]=https://34.133.31.193/api/webhook" \
   --field "config[content_type]=json" \
   --field "config[secret]=$WEBHOOK_SECRET" \
   --field "config[insecure_ssl]=1"
