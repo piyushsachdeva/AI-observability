@@ -495,15 +495,17 @@ Wait ~5 minutes for the deployment to be ready.
 https://e177716345f94357bde1679d417f21ac.us-central1.gcp.cloud.es.io:443
 ```
 
-### 4c. Open Kibana
+### 4c. Open Kibana — only to create an API key
+
+You only need Kibana here for one thing: **creating an API key**. There is no CLI way to do this.
+The key is used by OTel, GitHub Actions, and curl commands to authenticate with Elasticsearch.
+After this step you won't need Kibana again until Section 7 (Agent Builder).
 
 1. `cloud.elastic.co` → click your deployment → click **Open Kibana**
 2. Or go directly to: `https://e177716345f94357bde1679d417f21ac.kb.us-central1.gcp.cloud.es.io`
 3. Log in with username `elastic` and the password you saved in step 4a
 
 ### 4d. Create an API key
-
-The API key is used by OTel, GitHub Actions, and curl commands to authenticate with Elasticsearch.
 
 **Navigation:** Kibana → click the hamburger menu (☰) top left → **Stack Management** → under **Security** → **API Keys**
 
