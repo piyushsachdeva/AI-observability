@@ -145,11 +145,10 @@ cd microservices-demo
 
 From `cloud.elastic.co` → click your deployment:
 
-| What | Where to find it |
-|------|-----------------|
-| Elasticsearch endpoint | Under **Elasticsearch** → **Copy endpoint** |
-| OTLP ingest endpoint | Under **Integrations** → **Manage** → **APM** → copy the OTLP endpoint |
-| Kibana URL | Click **Open Kibana** |
+| What | Where to find it | Used for |
+|------|-----------------|----------|
+| Elasticsearch endpoint | Under **Elasticsearch** → **Copy endpoint** | GitHub secret `ES_ENDPOINT`, curl commands |
+| OTLP ingest endpoint | Under **Integrations** → **Manage** → **APM** → copy the OTLP endpoint | OTel kube-stack secret `elastic_otlp_endpoint` |
 
 ### 3c. Create API key — open Kibana once
 
