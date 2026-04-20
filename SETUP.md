@@ -209,6 +209,26 @@ kubectl get pods -n opentelemetry-operator-system
 
 Stores who deployed what and when — the bridge between crash logs and commit history.
 
+### How the GitHub Actions workflow works
+
+The repo already has `.github/workflows/index-deploy.yml`. On every push to `main` it:
+
+1. **Detects which service changed** — diffs `release/kubernetes-manifests.yaml` between the last two commits, greps the added lines for a service name like `paymentservice`
+2. **POSTs one JSON doc** to the `github-deployments` index in Elasticsearch:
+
+```
+timestamp   → when the push happened
+commit_sha  → full git SHA
+author      → GitHub username who pushed
+service     → which service changed (detected from the diff)
+change      → the commit message
+diff_url    → GitHub compare URL showing exactly what changed
+```
+
+This is what the agent reads when you ask "who broke paymentservice?" — it gets back the author, SHA, and a link to the diff.
+
+No Kubernetes component is involved — GitHub Actions runs in GitHub's cloud and POSTs directly to Elasticsearch.
+
 ### 5a. Create the index
 
 ```bash
