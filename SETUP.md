@@ -358,13 +358,45 @@ Kibana → ☰ → **Stack Management** → **Connectors** → **Create connecto
 - Model: `gpt-4o`
 - Click **Save & test**
 
-### 7b. Open Agent Builder
+### 7b. Create the tools
 
-Kibana → ☰ → **Search** → **Search AI Lake** → **Agent Builder**
+Kibana → ☰ → **Search** → **Search AI Lake** → **Tools** → **Create tool**
 
-> Alternative if not available: ☰ → **Observability** → **AI Assistant**
+**Tool 1 — `get_crash_logs`**
+- Name: `get_crash_logs`
+- Type: **Elasticsearch query**
+- Index: `logs-*`
+- ES|QL:
 
-### 7c. Create the agent
+```esql
+FROM logs-*
+| WHERE resource.attributes.k8s.namespace.name == "online-boutique"
+| WHERE body.text LIKE "*OOMKill*" OR body.text LIKE "*memory*"
+| SORT @timestamp DESC
+| LIMIT 20
+| KEEP @timestamp, resource.attributes.k8s.deployment.name, resource.attributes.k8s.pod.name, body.text
+```
+
+Click **Save**. Then **Create tool** again for Tool 2.
+
+**Tool 2 — `get_deploy_history`**
+- Name: `get_deploy_history`
+- Type: **Elasticsearch query**
+- Index: `github-deployments`
+- ES|QL:
+
+```esql
+FROM github-deployments
+| SORT timestamp DESC
+| LIMIT 5
+| KEEP timestamp, author, commit_sha, service, change, diff_url
+```
+
+Click **Save**.
+
+### 7c. Create the agent and add the tools
+
+Kibana → ☰ → **Search** → **Search AI Lake** → **Agent Builder** → **Create agent**
 
 - **Name:** `blame-the-deploy`
 - **LLM connector:** `openai-blame`
@@ -379,29 +411,7 @@ You are an SRE assistant. When asked why a service is crashing:
 Always cite the commit SHA and author name in your answer.
 ```
 
-### 7d. Add Tool 1 — get_crash_logs
-
-**Add tool** → **Elasticsearch query** → Index: `logs-*` → ES|QL:
-
-```esql
-FROM logs-*
-| WHERE resource.attributes.k8s.namespace.name == "online-boutique"
-| WHERE body.text LIKE "*OOMKill*" OR body.text LIKE "*memory*"
-| SORT @timestamp DESC
-| LIMIT 20
-| KEEP @timestamp, resource.attributes.k8s.deployment.name, resource.attributes.k8s.pod.name, body.text
-```
-
-### 7e. Add Tool 2 — get_deploy_history
-
-**Add tool** → **Elasticsearch query** → Index: `github-deployments` → ES|QL:
-
-```esql
-FROM github-deployments
-| SORT timestamp DESC
-| LIMIT 5
-| KEEP timestamp, author, commit_sha, service, change, diff_url
-```
+In the **Tools** section → **Add tool** → select `get_crash_logs` → **Add tool** again → select `get_deploy_history`
 
 Click **Save**.
 
