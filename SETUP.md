@@ -350,17 +350,11 @@ kubectl get pods -n online-boutique
 
 ## Step 7 — Agent Builder
 
-### 7a. Create LLM connector
+Uses Elastic's native **Claude claude-sonnet-4-6** — no external LLM connector needed.
 
-Kibana → ☰ → **Stack Management** → **Connectors** → **Create connector** → **OpenAI**
-- Name: `openai-blame`
-- API key: your OpenAI key from `platform.openai.com`
-- Model: `gpt-4o`
-- Click **Save & test**
+### 7a. Create the tools
 
-### 7b. Create the tools
-
-Kibana → ☰ → **Search** → **Search AI Lake** → **Tools** → **Create tool**
+Kibana → ☰ → **Search** → **Tools** → **Create tool**
 
 **Tool 1 — `get_crash_logs`**
 - Name: `get_crash_logs`
@@ -394,12 +388,12 @@ FROM github-deployments
 
 Click **Save**.
 
-### 7c. Create the agent and add the tools
+### 7b. Create the agent and add the tools
 
-Kibana → ☰ → **Search** → **Search AI Lake** → **Agent Builder** → **Create agent**
+Kibana → ☰ → **Search** → **Agent Builder** → **Create agent**
 
 - **Name:** `blame-the-deploy`
-- **LLM connector:** `openai-blame`
+- **Model:** `Claude claude-sonnet-4-6` (native — select from the model dropdown)
 - **Instructions:**
 
 ```
