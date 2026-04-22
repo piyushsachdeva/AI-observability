@@ -677,10 +677,10 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 24Mi
+            memory: 100Mi
           limits:
             cpu: 200m
-            memory: 12Mi
+            memory: 100Mi
 ---
 apiVersion: v1
 kind: Service
